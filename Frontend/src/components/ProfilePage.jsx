@@ -16,10 +16,10 @@ const ProfilePage = () => {
   
   // State for admin data
   const [adminData, setAdminData] = useState({
-    name: '',
-    role: '',
-    email: '',
-    avatar: ''
+    name: 'Alex Morgan',
+    role: 'Admin',
+    email: 'alex.morgan@taskflowpro.com',
+    avatar: 'A'
   });
 
   const [formData, setFormData] = useState({
@@ -44,10 +44,10 @@ const ProfilePage = () => {
         if (data.length > 0) {
           const user = data[0]; // Assuming the first user is the admin
           const updatedAdminData = {
-            name: user.username,
-            role: user.role,
-            email: user.email,
-            avatar: user.username.charAt(0).toUpperCase() // Use the first letter of the username
+            name: 'Alex Morgan',
+            role: 'Admin',
+            email: 'alex.morgan@taskflowpro.com',
+            avatar: 'A'
           };
           console.log('Updated adminData state:', updatedAdminData); // Debugging state update
           if (!updatedAdminData.email) {
