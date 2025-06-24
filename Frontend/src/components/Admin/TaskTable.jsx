@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -19,182 +19,176 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-const rows = [
-  {
-    id: 'TSK-001',
-    task: 'Complete project proposal',
-    assignee: { name: 'Archa', initials: 'AR' },
-    dueDate: '2023-06-15',
-    statusText: 'On track',
-    priority: 'High',
-    status: 'In Progress',
-    progress: 65
-  },
-  {
-    id: 'TSK-002',
-    task: 'Review marketing materials',
-    assignee: { name: 'Aadil', initials: 'AA' },
-    dueDate: '2023-06-10',
-    statusText: 'Overdue',
-    priority: 'Medium',
-    status: 'Pending',
-    progress: 20
-  },
-  {
-    id: 'TSK-003',
-    task: 'Client meeting preparation',
-    assignee: { name: 'Alisha', initials: 'AL' },
-    dueDate: '2023-06-12',
-    statusText: 'On track',
-    priority: 'Low',
-    status: 'Completed',
-    progress: 100
-  },
-  {
-    id: 'TSK-004',
-    task: 'API documentation',
-    assignee: { name: 'Neenu', initials: 'NE' },
-    dueDate: '2023-06-18',
-    statusText: 'On track',
-    priority: 'High',
-    status: 'In Progress',
-    progress: 40
-  }
-];
-const getPriorityColor = (priority) => {
-  switch (priority) {
-    case 'High': return 'error';
-    case 'Medium': return 'warning';
-    case 'Low': return 'success';
-    default: return 'default';
-    }
-};
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'In Progress': return 'info';
-    case 'Pending': return 'default';
-    case 'Completed': return 'success';
-    default: return 'default';
-  }
-}
+import { useNavigate } from 'react-router-dom';
 const TaskTable = () => {
-  const handleEdit = (id) => {
-    console.log('Editing task:', id);
-    // Add edit logic here
+  const [rows, setRows] = useState([]);
+
+ useEffect(() => {
+  fetch('http://localhost:3000/task')
+    .then(response => response.json())
+    .then(data => {
+      const formattedTasks = data.map(task => ({
+        ...task,
+        id: task._id,
+        assignee: {
+          name: task.assignedToUserId || 'Unassigned',
+          initials: (task.assignedToUserId || 'U').charAt(0).toUpperCase()
+        },
+        progress: task.status === 'done' ? 100 : task.status === 'in-progress' ? 50 : 0,
+      }));
+      setRows(formattedTasks);
+    })
+    .catch(error => console.error('Error fetching tasks:', error));
+}, []);
+
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'High': return 'error';
+      case 'Medium': return 'warning';
+      case 'Low': return 'success';
+      default: return 'default';
+    }
   };
 
-  const handleDelete = (id) => {
-    console.log('Deleting task:', id);
-    // Add delete logic here
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'In Progress': return 'info';
+      case 'Pending': return 'default';
+      case 'Completed': return 'success';
+      default: return 'default';
+    }
   };
 
+    const navigate = useNavigate();
+
+    const handleEdit = (id) => {
+      const taskToEdit = rows.find(row => row.id === id);
+      if (taskToEdit) {
+        navigate('/assign', { state: { task: taskToEdit } });
+
+      }
+    };
+
+    const handleDelete = (id) => {
+      if (window.confirm('Are you sure you want to delete this task?')) {
+        fetch(`http://localhost:3000/task/${id}`, {
+          method: 'DELETE',
+        })
+          .then(response => {
+            if (response.ok) {
+              setRows(prevRows => prevRows.filter(row => row.id !== id));
+              console.log('Task deleted successfully:', id);
+            } else {
+              console.error('Failed to delete task:', id);
+            }
+          })
+          .catch(error => console.error('Error deleting task:', error));
+      }
+    };
 
   return (
     <div>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" fontWeight="bold">Task Dashboard</Typography>
-          {/* <Typography variant="subtitle2" color="text.secondary">Demo Preview</Typography> */}
         </Box>
-        {/* <Button variant="contained" color="primary" size="small">
-          Create New Task 
-        </Button> */}
       </Box>
       <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 500 }} size="small" aria-label="a dense table">
-        <TableHead>
-          <TableRow style={{ backgroundColor: '#d3d3d3' }}>
-            <TableCell style={{ fontWeight: 'bold'}}>Task</TableCell>
-            <TableCell style={{ fontWeight: 'bold'}}>Assignee</TableCell>
-            <TableCell style={{ fontWeight: 'bold'}}>Due Date</TableCell>
-            <TableCell style={{ fontWeight: 'bold'}}>Priority</TableCell>
-            <TableCell style={{ fontWeight: 'bold'}}>Status</TableCell>
-            <TableCell style={{ fontWeight: 'bold'}}>Progress</TableCell>
-            <TableCell style={{ fontWeight: 'bold'}}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow
-              key={row.id}
-              sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-            >
-              <TableCell>
-                <Box display="flex" alignItems="center" gap={2 }>
-                <AssignmentTurnedInIcon style={{color:'#A7C7E7',backgroundColor:'#F0FFFF' }} />
-                <Box>
-                <Typography variant="body1">{row.task}</Typography> 
-                <Typography variant="caption" color="text.secondary">ID: {row.id}</Typography>
-                </Box>
-                </Box>
-              </TableCell>
-              <TableCell>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Avatar style={{color:'#A7C7E7',backgroundColor:'#F0FFFF' }}>{row.assignee.initials}</Avatar>
-                  <Typography>{row.assignee.name}</Typography>
-                </Box>
-              </TableCell>
-             <TableCell>
-                <Typography>{row.dueDate}</Typography>
-                <Typography variant="caption" color={row.statusText === 'Overdue' ? 'error.main' : 'success.main'}>
-                  {row.statusText}
-                </Typography>
-              </TableCell>
-              <TableCell > <Chip label={row.priority} color={getPriorityColor(row.priority)} size="small" style={{width:75, borderRadius:7}}/>
-              </TableCell>
-              <TableCell > <Chip label={row.status} color={getStatusColor(row.status)} size="small" style={{width:100, borderRadius:7}} />
-              </TableCell>
-               <TableCell>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={row.progress}
-                    sx={{ height: 8, borderRadius: 5, width:50 }}
-                    color="primary"
-                    />
-                  <Typography variant="caption" color="text.secondary">{row.progress}%</Typography>
-                  </Box>
-              </TableCell>
-              <TableCell>
-                <Box display="flex" gap={1}>
-                  <IconButton 
-                    size="small" 
-                    color="primary"
-                    onClick={() => handleEdit(row.id)}
-                  >
-                    <EditIcon fontSize="small" />Edit
-                  </IconButton>
-                  <IconButton 
-                    size="small" 
-                    color="error"
-                    onClick={() => handleDelete(row.id)}
-                  >
-                    <DeleteIcon fontSize="small" />Delete
-                  </IconButton>
-                </Box>
-              </TableCell>
+        <Table sx={{ minWidth: 500 }} size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow style={{ backgroundColor: '#d3d3d3' }}>
+              <TableCell style={{ fontWeight: 'bold' }}>Project ID</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Title</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Assignee</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Due Date</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Priority</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Status</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Progress</TableCell>
+              <TableCell style={{ fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-    <Box mt={2} display="flex" justifyContent="flex-start">
+          </TableHead>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow
+                key={row.id}
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+              >
+                <TableCell>
+                  <Typography>{row.projectId}</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography>{row.title}</Typography>
+                </TableCell>
+                <TableCell>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Avatar style={{ color: '#A7C7E7', backgroundColor: '#F0FFFF' }}>{row.assignee.initials}</Avatar>
+                    <Typography>{row.assignee.name}</Typography>
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Typography>{row.dueDate}</Typography>
+                  <Typography variant="caption" color={row.statusText === 'Overdue' ? 'error.main' : 'success.main'}>
+                    {row.statusText}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Chip label={row.priority} color={getPriorityColor(row.priority)} size="small" style={{ width: 75, borderRadius: 7 }} />
+                </TableCell>
+                <TableCell>
+                  <Chip label={row.status} color={getStatusColor(row.status)} size="small" style={{ width: 100, borderRadius: 7 }} />
+                </TableCell>
+                <TableCell>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={row.progress}
+                      sx={{ height: 8, borderRadius: 5, width: 50 }}
+                      color="primary"
+                    />
+                    <Typography variant="caption" color="text.secondary">{row.progress}%</Typography>
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Box display="flex" gap={1}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleEdit(row.id)}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(row.id)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Box mt={2} display="flex" justifyContent="flex-start">
         <Typography variant="body2" color="text.secondary">
           Showing {rows.length} of {rows.length} tasks
         </Typography>
         <div style={{ right: 10, position: 'absolute', marginLeft: 'auto' }}>
-        <Stack direction="row" spacing={2} ml={2}>
-          <Button variant="contained" startIcon={<FileDownloadIcon />}>
-            Export CSV
-          </Button>
-          <Button variant="contained" color="secondary" startIcon={<PrintIcon />}>
-            Print
-          </Button>
-        </Stack>
+          <Stack direction="row" spacing={2} ml={2}>
+            <Button variant="contained" startIcon={<FileDownloadIcon />}>
+              Export CSV
+            </Button>
+            <Button variant="contained" color="secondary" startIcon={<PrintIcon />}>
+              Print
+            </Button>
+          </Stack>
         </div>
       </Box>
     </div>
-  )
-}
+  );
+};
 
-export default TaskTable
+export default TaskTable;

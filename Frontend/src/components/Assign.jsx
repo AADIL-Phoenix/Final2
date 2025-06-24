@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
@@ -86,11 +87,16 @@ const theme = createTheme({
 });
 
 const Assign = () => {
+  const location = useLocation();
   const [activeStep, setActiveStep] = useState(0);
-  const [openSnackbar, setOpenSnackbar] = useState(false); 
   const [formData, setFormData] = useState({
     projectId: '',
     userId: '',
+    title: '',
+    description: '',
+    dueDate: '',
+    submissionDate: '',
+    priority: 'medium',
     tasks: [
       {
         id: 1,
@@ -102,8 +108,12 @@ const Assign = () => {
       }
     ]
   });
+
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  // Removed duplicate declaration of formData and setFormData
   const [errors, setErrors] = useState({});
   const [taskErrors, setTaskErrors] = useState([{}]);
+  
 
   const steps = ['Project Details', 'Task Information', 'Review & Assign'];
 
@@ -150,6 +160,38 @@ const Assign = () => {
   };
 
   // Handle change for project/user fields
+  // Pre-fill form fields with task data if available
+  useEffect(() => {
+    if (location.state?.task) {
+      const task = location.state.task;
+
+      setFormData({
+        createdByUserId: task.createdByUserId || '',
+        projectId: task.projectId || '',
+        projectName: task.projectName || '',
+        userId: task.assignedToUserId || '',
+        tasks: [
+          {
+            id: 1,
+            task: task.title || '',
+            dueDate: task.dueDate?.slice(0, 10) || '',
+            submissionDate: task.submissionDate?.slice(0, 10) || '',
+            priority: task.priority || 'medium',
+            description: task.description || ''
+          }
+        ]
+      });
+    }
+    else if (location.state?.assignToUserId) {
+      // Only pre-fill userId if not coming from task editing
+      setFormData(prev => ({
+        ...prev,
+        userId: location.state.assignToUserId
+      }));
+    }
+  }, [location.state]);
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -253,7 +295,7 @@ const Assign = () => {
           priority: task.priority || 'medium',
           dueDate: task.dueDate || null,
           projectId: formData.projectId,
-          projectName:formData.projectName,
+          projectName: formData.projectName,
           assignedToUserId: formData.userId
         };
         await axios.post('http://localhost:3000/newtask', {
@@ -262,7 +304,7 @@ const Assign = () => {
         });
 
       }
-       setOpenSnackbar(true);
+      setOpenSnackbar(true);
 
       // Reset form
       setFormData({
@@ -318,7 +360,7 @@ const Assign = () => {
                 helperText={errors.projectId}
               />
             </Grid>
-                       <Grid item xs={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 name="projectName"

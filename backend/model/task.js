@@ -11,7 +11,7 @@ const taskSchema = new mongoose.Schema({
     // Removed default: Date.now as dueDate is typically set explicitly
   },
  projectId: { type: String, required: true },
- projectName: { type: String },
+  projectName: { type: String, required: true },
 assignedToUserId: { type: String },
 createdByUserId: { type: String }
 }, { collection: 'tasks', timestamps: true }); // Correct collection name and enable timestamps

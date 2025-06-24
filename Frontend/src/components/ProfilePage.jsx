@@ -33,6 +33,9 @@ const ProfilePage = () => {
       .then(response => response.json())
       .then(data => {
         console.log('Fetched user data:', data); // Debugging the API response
+        if (!data || data.length === 0) {
+          console.error('No user data found or invalid response:', data);
+        }
         if (data.length === 0) {
           console.error('No user data found in the response.');
         } else {
@@ -47,6 +50,9 @@ const ProfilePage = () => {
             avatar: user.username.charAt(0).toUpperCase() // Use the first letter of the username
           };
           console.log('Updated adminData state:', updatedAdminData); // Debugging state update
+          if (!updatedAdminData.email) {
+            console.error('Email is missing in the updated adminData:', updatedAdminData);
+          }
           setAdminData(updatedAdminData);
           setFormData({
             name: user.username,

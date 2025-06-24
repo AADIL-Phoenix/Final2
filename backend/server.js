@@ -12,10 +12,9 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-
-
 app.post('/newtask', async (req, res) => {
   try {
+    console.log('Request body:', req.body); // Debugging log
     const { title, description, status, priority, dueDate, projectId, projectName,assignedToUserId, createdByUserId } = req.body;
 
     // Validate required fields
@@ -42,6 +41,19 @@ app.post('/newtask', async (req, res) => {
   }
 });
 
+app.delete('/task/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedTask = await Task.findByIdAndDelete(id);
+    if (!deletedTask) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    res.status(200).json({ message: 'Task deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting task:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 // New GET API for tasks
 app.get('/task', async (req, res) => {
@@ -53,7 +65,6 @@ app.get('/task', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
-
 
 app.post('/newuser', async (req, res) => {
   try {
@@ -75,6 +86,21 @@ app.post('/newuser', async (req, res) => {
     res.status(201).json(newUser);
   } catch (err) {
     console.error('Error creating user:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.delete('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('Deleting user with userId:', userId);
+    const deletedUser = await User.findOneAndDelete({ userId });
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting user:', err);
     res.status(500).send('Internal Server Error');
   }
 });
