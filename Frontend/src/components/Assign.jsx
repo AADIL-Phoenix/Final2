@@ -253,6 +253,7 @@ const Assign = () => {
           priority: task.priority || 'medium',
           dueDate: task.dueDate || null,
           projectId: formData.projectId,
+          projectName:formData.projectName,
           assignedToUserId: formData.userId
         };
         await axios.post('http://localhost:3000/newtask', {
@@ -315,6 +316,18 @@ const Assign = () => {
                 onChange={handleChange}
                 error={!!errors.projectId}
                 helperText={errors.projectId}
+              />
+            </Grid>
+                       <Grid item xs={12}>
+              <TextField
+                fullWidth
+                name="projectName"
+                label="Project Name"
+                variant="outlined"
+                value={formData.projectName}
+                onChange={handleChange}
+                error={!!errors.projectName}
+                helperText={errors.projectName}
               />
             </Grid>
             <Grid item xs={12}>

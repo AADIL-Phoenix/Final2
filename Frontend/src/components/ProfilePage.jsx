@@ -14,18 +14,48 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   
-  // Sample admin data
-  const adminData = {
-    name: 'Alex Morgan',
-    role: 'Administrator',
-    email: 'alex.morgan@taskflowpro.com',
-    avatar: 'AM'
-  };
+  // State for admin data
+  const [adminData, setAdminData] = useState({
+    name: '',
+    role: '',
+    email: '',
+    avatar: ''
+  });
 
   const [formData, setFormData] = useState({
-    name: adminData.name,
-    email: adminData.email
+    name: '',
+    email: ''
   });
+
+  React.useEffect(() => {
+    // Fetch user data from the backend
+    fetch('http://localhost:3000/user')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Fetched user data:', data); // Debugging the API response
+        if (data.length === 0) {
+          console.error('No user data found in the response.');
+        } else {
+          console.log('First user data:', data[0]); // Inspecting the first user
+        }
+        if (data.length > 0) {
+          const user = data[0]; // Assuming the first user is the admin
+          const updatedAdminData = {
+            name: user.username,
+            role: user.role,
+            email: user.email,
+            avatar: user.username.charAt(0).toUpperCase() // Use the first letter of the username
+          };
+          console.log('Updated adminData state:', updatedAdminData); // Debugging state update
+          setAdminData(updatedAdminData);
+          setFormData({
+            name: user.username,
+            email: user.email
+          });
+        }
+      })
+      .catch(error => console.error('Error fetching user data:', error));
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

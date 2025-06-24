@@ -16,7 +16,7 @@ app.use(express.json());
 
 app.post('/newtask', async (req, res) => {
   try {
-    const { title, description, status, priority, dueDate, projectId, assignedToUserId, createdByUserId } = req.body;
+    const { title, description, status, priority, dueDate, projectId, projectName,assignedToUserId, createdByUserId } = req.body;
 
     // Validate required fields
     if (!title || !projectId || !assignedToUserId || !createdByUserId) {
@@ -29,7 +29,8 @@ app.post('/newtask', async (req, res) => {
       status,
       priority,
       dueDate,
-      projectId: projectId.toString(), // Save as string
+      projectId: projectId.toString(),
+      projectName: projectName.toString(), // Save as string
       assignedToUserId: assignedToUserId.toString(), // Save as string
       createdByUserId: createdByUserId.toString() // Save as string
     });
