@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
@@ -26,7 +26,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
   Divider
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -88,34 +87,74 @@ const theme = createTheme({
 
 const Assign = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
+  const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({
     projectId: '',
+    projectName: '',
     userId: '',
-    title: '',
-    description: '',
-    dueDate: '',
-    submissionDate: '',
-    priority: 'medium',
     tasks: [
       {
         id: 1,
         task: '',
         dueDate: '',
-        submissionDate: '',
         priority: 'medium',
         description: ''
       }
     ]
   });
-
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  // Removed duplicate declaration of formData and setFormData
   const [errors, setErrors] = useState({});
   const [taskErrors, setTaskErrors] = useState([{}]);
   
-
   const steps = ['Project Details', 'Task Information', 'Review & Assign'];
+
+  // Initialize form with current user and fetch team members
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    setCurrentUser(storedUser);
+    
+    // Fetch team members from API
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/user');
+        setUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
+
+  // Pre-fill form with task/user data
+  useEffect(() => {
+    if (location.state?.task) {
+      const task = location.state.task;
+      setFormData({
+        projectId: task.projectId || '',
+        projectName: task.projectName || '',
+        userId: task.assignedToUserId || '',
+        tasks: [
+          {
+            id: 1,
+            task: task.title || '',
+            dueDate: task.dueDate?.slice(0, 10) || '',
+            priority: task.priority || 'medium',
+            description: task.description || ''
+          }
+        ]
+      });
+    }
+    else if (location.state?.assignToUserId) {
+      setFormData(prev => ({
+        ...prev,
+        userId: location.state.assignToUserId
+      }));
+    }
+  }, [location.state]);
 
   // Function to add a new task
   const addTask = () => {
@@ -131,7 +170,6 @@ const Assign = () => {
           id: newTaskId,
           task: '',
           dueDate: '',
-          submissionDate: '',
           priority: 'medium',
           description: ''
         }
@@ -160,38 +198,6 @@ const Assign = () => {
   };
 
   // Handle change for project/user fields
-  // Pre-fill form fields with task data if available
-  useEffect(() => {
-    if (location.state?.task) {
-      const task = location.state.task;
-
-      setFormData({
-        createdByUserId: task.createdByUserId || '',
-        projectId: task.projectId || '',
-        projectName: task.projectName || '',
-        userId: task.assignedToUserId || '',
-        tasks: [
-          {
-            id: 1,
-            task: task.title || '',
-            dueDate: task.dueDate?.slice(0, 10) || '',
-            submissionDate: task.submissionDate?.slice(0, 10) || '',
-            priority: task.priority || 'medium',
-            description: task.description || ''
-          }
-        ]
-      });
-    }
-    else if (location.state?.assignToUserId) {
-      // Only pre-fill userId if not coming from task editing
-      setFormData(prev => ({
-        ...prev,
-        userId: location.state.assignToUserId
-      }));
-    }
-  }, [location.state]);
-
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -241,17 +247,16 @@ const Assign = () => {
     const newTaskErrors = Array(formData.tasks.length).fill({}).map(() => ({}));
 
     if (activeStep === 0) {
-      if (!formData.createdByUserId) {
-        newErrors.createdByUserId = 'Created by User ID is required';
-        valid = false;
-      }
-      // Validate project and user fields
       if (!formData.projectId) {
         newErrors.projectId = 'Project ID is required';
         valid = false;
       }
+      if (!formData.projectName) {
+        newErrors.projectName = 'Project Name is required';
+        valid = false;
+      }
       if (!formData.userId) {
-        newErrors.userId = 'User ID is required';
+        newErrors.userId = 'Assigned User is required';
         valid = false;
       }
     } else if (activeStep === 1) {
@@ -263,10 +268,6 @@ const Assign = () => {
         }
         if (!task.dueDate) {
           newTaskErrors[index].dueDate = 'Due date is required';
-          valid = false;
-        }
-        if (!task.submissionDate) {
-          newTaskErrors[index].submissionDate = 'Submission date is required';
           valid = false;
         }
       });
@@ -286,48 +287,30 @@ const Assign = () => {
 
   const handleSubmit = async () => {
     try {
-      console.log("Submitting formData:", JSON.stringify(formData, null, 2));
       for (const task of formData.tasks) {
         const payload = {
-          title: task.task || 'Default Title', // Ensure title is included
+          title: task.task || 'Default Title',
           description: task.description || '',
-          status: 'to-do', // Default status
+          status: 'to-do',
           priority: task.priority || 'medium',
           dueDate: task.dueDate || null,
           projectId: formData.projectId,
           projectName: formData.projectName,
-          assignedToUserId: formData.userId
+          assignedToUserId: formData.userId,
+          createdByUserId: currentUser?.userId || 'admin'
         };
-        await axios.post('http://localhost:3000/newtask', {
-          ...payload,
-          createdByUserId: formData.createdByUserId,
-        });
-
+        await axios.post('http://localhost:3000/newtask', payload);
       }
       setOpenSnackbar(true);
-
-      // Reset form
-      setFormData({
-        projectId: '',
-        userId: '',
-        createdByUserId: '',
-        tasks: [
-          {
-            id: 1,
-            task: '',
-            dueDate: '',
-            submissionDate: '',
-            priority: 'medium',
-            description: ''
-          }
-        ]
-      });
-      setTaskErrors([{}]);
-      setActiveStep(0);
     } catch (error) {
       console.error('Error submitting tasks:', error);
       alert('Failed to assign tasks. Please try again.');
     }
+  };
+
+  const handleSnackbarClose = () => {
+    setOpenSnackbar(false);
+    navigate('/profile'); // Navigate to admin profile after closing snackbar
   };
 
   const getStepContent = (step) => {
@@ -336,19 +319,27 @@ const Assign = () => {
         return (
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                name="createdByUserId"
-                label="Created By (User ID)"
-                variant="outlined"
-                value={formData.createdByUserId}
-                onChange={handleChange}
-                error={!!errors.createdByUserId}
-                helperText={errors.createdByUserId}
-              />
+              <FormControl fullWidth error={!!errors.userId}>
+                <InputLabel>Assign To</InputLabel>
+                <Select
+                  name="userId"
+                  value={formData.userId}
+                  onChange={handleChange}
+                  label="Assign To"
+                >
+                  {users.map(user => (
+                    <MenuItem key={user.userId} value={user.userId}>
+                      {user.username} ({user.userId})
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.userId && (
+                  <FormHelperText>{errors.userId}</FormHelperText>
+                )}
+              </FormControl>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 name="projectId"
@@ -360,7 +351,7 @@ const Assign = () => {
                 helperText={errors.projectId}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 name="projectName"
@@ -370,18 +361,6 @@ const Assign = () => {
                 onChange={handleChange}
                 error={!!errors.projectName}
                 helperText={errors.projectName}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                name="userId"
-                label="User ID"
-                variant="outlined"
-                value={formData.userId}
-                onChange={handleChange}
-                error={!!errors.userId}
-                helperText={errors.userId}
               />
             </Grid>
           </Grid>
@@ -440,20 +419,6 @@ const Assign = () => {
                       onChange={(e) => handleTaskChange(task.id, e)}
                       error={!!(taskErrors[index]?.dueDate)}
                       helperText={taskErrors[index]?.dueDate}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      name="submissionDate"
-                      label="Task Submission Date"
-                      type="date"
-                      variant="outlined"
-                      value={task.submissionDate}
-                      onChange={(e) => handleTaskChange(task.id, e)}
-                      error={!!(taskErrors[index]?.submissionDate)}
-                      helperText={taskErrors[index]?.submissionDate}
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
@@ -518,10 +483,17 @@ const Assign = () => {
               </Typography>
 
               <Typography variant="subtitle1" color="textSecondary">
-                User ID
+                Project Name
               </Typography>
               <Typography variant="body1" gutterBottom sx={{ fontWeight: 500 }}>
-                {formData.userId}
+                {formData.projectName}
+              </Typography>
+
+              <Typography variant="subtitle1" color="textSecondary">
+                Assigned To
+              </Typography>
+              <Typography variant="body1" gutterBottom sx={{ fontWeight: 500 }}>
+                {users.find(u => u.userId === formData.userId)?.username || formData.userId}
               </Typography>
 
               <Divider sx={{ my: 3 }} />
@@ -548,13 +520,6 @@ const Assign = () => {
                       <ListItemText
                         primary="Due Date"
                         secondary={task.dueDate || 'Not specified'}
-                      />
-                    </ListItem>
-
-                    <ListItem disablePadding>
-                      <ListItemText
-                        primary="Submission Date"
-                        secondary={task.submissionDate || 'Not specified'}
                       />
                     </ListItem>
 
@@ -655,10 +620,10 @@ const Assign = () => {
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
-        onClose={() => setOpenSnackbar(false)}
+        onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setOpenSnackbar(false)} severity="success" sx={{ width: '100%' }}>
+        <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
           Task(s) added successfully!
         </Alert>
       </Snackbar>

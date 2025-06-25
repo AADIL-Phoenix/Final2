@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -11,7 +11,6 @@ import './Task.css';
 import { AiOutlineFileText } from 'react-icons/ai';
 import { MdErrorOutline, MdCheckCircle, MdAutorenew, MdHourglassEmpty, MdArrowDownward } from 'react-icons/md';
 import { FaFlag } from 'react-icons/fa';
-import { useParams } from 'react-router-dom';
 
 function createData(projectId, name, task, duedate, priority, status, assignedto) {
   return { projectId, name, task, duedate, priority, status , assignedto};
@@ -25,7 +24,6 @@ const defaultRows = [
   createData('TSK-001', 'Website Redesign', 'Test mobile responsiveness', '2025-06-20', 'High', 'Pending','Archa'),
   createData('TSK-001', 'Website Redesign', 'Optimize CSS for performance', '2025-06-20', 'High', 'Pending','Neenu'),
   
-
   // Project: Mobile App
   createData('TSK-002', 'Mobile App', 'Fix login crash on Android', '2025-06-18', 'High', 'Pending','Adil'),
 
@@ -45,25 +43,20 @@ const defaultRows = [
   createData('TSK-007', 'Presentation Prep', 'Create demo slides', '2025-06-24', 'Low', 'In Progress','Alisha'),
 ];
 
-
 const Task = () => {
-  const { name } = useParams(); // 👈 get name from URL like /user/Neenu
+  const { name } = useParams();
   const [rows, setRows] = useState([]);
   const navigate = useNavigate();
 
-   useEffect(() => {
-  const stored = JSON.parse(localStorage.getItem('tasks'));
-
-  // Check if it's an array and has valid data
-  if (Array.isArray(stored) && stored.length > 0 && stored[0].assignedto) {
-    setRows(stored);
-  } else {
-    localStorage.setItem('tasks', JSON.stringify(defaultRows));
-    setRows(defaultRows);
-  }
-}, []);
-
-    
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('tasks'));
+    if (Array.isArray(stored) && stored.length > 0 && stored[0].assignedto) {
+      setRows(stored);
+    } else {
+      localStorage.setItem('tasks', JSON.stringify(defaultRows));
+      setRows(defaultRows);
+    }
+  }, []);
 
   const renderBadge = (value) => {
     const iconMap = {
@@ -103,21 +96,16 @@ const Task = () => {
       </span>
     );
   };
-  console.log("Name from URL:", name);
-console.log("All tasks:", rows.map(r => r.assignedto));
-
 
   const filteredRows = name
-  ? rows.filter(
-      (task) =>
-        task.assignedto &&
-        name &&
-        task.assignedto.toLowerCase() === name.toLowerCase()
-    )
-  : rows;
+    ? rows.filter(
+        (task) =>
+          task.assignedto &&
+          name &&
+          task.assignedto.toLowerCase() === name.toLowerCase()
+      )
+    : rows;
 
-
-  // ... then group and render filteredRows instead of rows
   const grouped = filteredRows.reduce((acc, task) => {
     if (!acc[task.projectId]) {
       acc[task.projectId] = {

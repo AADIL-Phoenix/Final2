@@ -174,7 +174,6 @@ const ProfilePage = () => {
             {adminData.role}
           </Typography>
           
-          
           <Box sx={{ 
             display: 'flex', 
             justifyContent: 'center', 
@@ -213,8 +212,6 @@ const ProfilePage = () => {
           </Box>
           
           <Divider sx={{ my: 2 }} />
-          
-          
           
           {isEditing && (
             <Button 

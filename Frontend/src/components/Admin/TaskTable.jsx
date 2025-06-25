@@ -11,7 +11,6 @@ import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import LinearProgress from '@mui/material/LinearProgress';
-import AssignmentTurnedInIcon from '@mui/icons-material/Assignment';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PrintIcon from '@mui/icons-material/Print';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,72 +19,95 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { useNavigate } from 'react-router-dom';
+
 const TaskTable = () => {
   const [rows, setRows] = useState([]);
+  const navigate = useNavigate();
 
- useEffect(() => {
-  fetch('http://localhost:3000/task')
-    .then(response => response.json())
-    .then(data => {
-      const formattedTasks = data.map(task => ({
-        ...task,
-        id: task._id,
-        assignee: {
-          name: task.assignedToUserId || 'Unassigned',
-          initials: (task.assignedToUserId || 'U').charAt(0).toUpperCase()
-        },
-        progress: task.status === 'done' ? 100 : task.status === 'in-progress' ? 50 : 0,
-      }));
-      setRows(formattedTasks);
-    })
-    .catch(error => console.error('Error fetching tasks:', error));
-}, []);
+  useEffect(() => {
+    fetch('http://localhost:3000/task')
+      .then(response => response.json())
+      .then(data => {
+        const formattedTasks = data.map(task => {
+          // Format the due date as YYYY-MM-DD
+          let formattedDueDate = '';
+          if (task.dueDate) {
+            const date = new Date(task.dueDate);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            formattedDueDate = `${year}-${month}-${day}`;
+          }
+          
+          return {
+            ...task,
+            id: task._id,
+            assignee: {
+              name: task.assignedToUserId || 'Unassigned',
+              initials: (task.assignedToUserId || 'U').charAt(0).toUpperCase()
+            },
+            progress: task.status === 'done' ? 100 : task.status === 'in-progress' ? 50 : 0,
+            dueDate: formattedDueDate // Use the formatted date
+          };
+        });
+        setRows(formattedTasks);
+      })
+      .catch(error => console.error('Error fetching tasks:', error));
+  }, []);
 
-
+  // Updated priority color mapping
   const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'High': return 'error';
-      case 'Medium': return 'warning';
-      case 'Low': return 'success';
+    switch (priority.toLowerCase()) {
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
       default: return 'default';
     }
   };
 
+  // Updated status color mapping
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'In Progress': return 'info';
-      case 'Pending': return 'default';
-      case 'Completed': return 'success';
+    switch (status.toLowerCase()) {
+      case 'to-do': return 'primary'; // Blue for To Do
+      case 'in-progress': return 'info'; // Light blue for In Progress
+      case 'completed': return 'success'; // Green for Completed
       default: return 'default';
     }
   };
 
-    const navigate = useNavigate();
+  // Format status for display
+  const formatStatus = (status) => {
+    switch (status.toLowerCase()) {
+      case 'to-do': return 'To Do';
+      case 'in-progress': return 'In Progress';
+      case 'completed': return 'Completed';
+      default: return status;
+    }
+  };
 
-    const handleEdit = (id) => {
-      const taskToEdit = rows.find(row => row.id === id);
-      if (taskToEdit) {
-        navigate('/assign', { state: { task: taskToEdit } });
+  const handleEdit = (id) => {
+    const taskToEdit = rows.find(row => row.id === id);
+    if (taskToEdit) {
+      navigate('/assign', { state: { task: taskToEdit } });
+    }
+  };
 
-      }
-    };
-
-    const handleDelete = (id) => {
-      if (window.confirm('Are you sure you want to delete this task?')) {
-        fetch(`http://localhost:3000/task/${id}`, {
-          method: 'DELETE',
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      fetch(`http://localhost:3000/task/${id}`, {
+        method: 'DELETE',
+      })
+        .then(response => {
+          if (response.ok) {
+            setRows(prevRows => prevRows.filter(row => row.id !== id));
+            console.log('Task deleted successfully:', id);
+          } else {
+            console.error('Failed to delete task:', id);
+          }
         })
-          .then(response => {
-            if (response.ok) {
-              setRows(prevRows => prevRows.filter(row => row.id !== id));
-              console.log('Task deleted successfully:', id);
-            } else {
-              console.error('Failed to delete task:', id);
-            }
-          })
-          .catch(error => console.error('Error deleting task:', error));
-      }
-    };
+        .catch(error => console.error('Error deleting task:', error));
+    }
+  };
 
   return (
     <div>
@@ -127,16 +149,32 @@ const TaskTable = () => {
                   </Box>
                 </TableCell>
                 <TableCell>
+                  {/* Only show the formatted due date */}
                   <Typography>{row.dueDate}</Typography>
-                  <Typography variant="caption" color={row.statusText === 'Overdue' ? 'error.main' : 'success.main'}>
-                    {row.statusText}
-                  </Typography>
                 </TableCell>
                 <TableCell>
-                  <Chip label={row.priority} color={getPriorityColor(row.priority)} size="small" style={{ width: 75, borderRadius: 7 }} />
+                  <Chip 
+                    label={row.priority} 
+                    color={getPriorityColor(row.priority)} 
+                    size="small" 
+                    style={{ 
+                      width: 75, 
+                      borderRadius: 7,
+                      fontWeight: 'bold'
+                    }} 
+                  />
                 </TableCell>
                 <TableCell>
-                  <Chip label={row.status} color={getStatusColor(row.status)} size="small" style={{ width: 100, borderRadius: 7 }} />
+                  <Chip 
+                    label={formatStatus(row.status)} 
+                    color={getStatusColor(row.status)} 
+                    size="small" 
+                    style={{ 
+                      width: 100, 
+                      borderRadius: 7,
+                      fontWeight: 'bold'
+                    }} 
+                  />
                 </TableCell>
                 <TableCell>
                   <Box display="flex" alignItems="center" gap={1}>
