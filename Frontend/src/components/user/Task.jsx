@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -12,50 +13,39 @@ import { AiOutlineFileText } from 'react-icons/ai';
 import { MdErrorOutline, MdCheckCircle, MdAutorenew, MdHourglassEmpty, MdArrowDownward } from 'react-icons/md';
 import { FaFlag } from 'react-icons/fa';
 
-function createData(projectId, name, task, duedate, priority, status, assignedto) {
-  return { projectId, name, task, duedate, priority, status , assignedto};
-}
-
-const defaultRows = [
-  // Project: Website Redesign (TSK-001)
-  createData('TSK-001', 'Website Redesign', 'Design homepage layout', '2025-06-20', 'High', 'Pending','Neenu'),
-  createData('TSK-001', 'Website Redesign', 'Fix navbar responsiveness', '2025-06-20', 'High', 'Pending','Neenu'),
-  createData('TSK-001', 'Website Redesign', 'Update hero section images', '2025-06-20', 'High', 'Pending','Archa'),
-  createData('TSK-001', 'Website Redesign', 'Test mobile responsiveness', '2025-06-20', 'High', 'Pending','Archa'),
-  createData('TSK-001', 'Website Redesign', 'Optimize CSS for performance', '2025-06-20', 'High', 'Pending','Neenu'),
-  
-  // Project: Mobile App
-  createData('TSK-002', 'Mobile App', 'Fix login crash on Android', '2025-06-18', 'High', 'Pending','Adil'),
-
-  // Project: API Development
-  createData('TSK-003', 'API Development', 'Create user profile endpoint', '2025-06-22', 'Medium', 'Completed','Adil'),
-
-  // Project: Testing Suite
-  createData('TSK-004', 'Testing Suite', 'Write unit tests for utils', '2025-06-19', 'Low', 'Pending','Alisha'),
-
-  // Project: Authentication Module
-  createData('TSK-005', 'Authentication Module', 'Implement password reset', '2025-06-21', 'High', 'Completed','Alisha'),
-
-  // Project: Analytics Integration
-  createData('TSK-006', 'Analytics Integration', 'Integrate Google Analytics', '2025-06-23', 'Medium', 'Pending','Adil'),
-
-  // Project: Presentation Prep
-  createData('TSK-007', 'Presentation Prep', 'Create demo slides', '2025-06-24', 'Low', 'In Progress','Alisha'),
-];
 
 const Task = () => {
-  const { name } = useParams();
+  const { name, userId } = useParams();
   const [rows, setRows] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('tasks'));
-    if (Array.isArray(stored) && stored.length > 0 && stored[0].assignedto) {
-      setRows(stored);
-    } else {
-      localStorage.setItem('tasks', JSON.stringify(defaultRows));
-      setRows(defaultRows);
-    }
+    const fetchTasks = async () => {
+      try {
+        // Use the userId from URL params to fetch tasks
+        const response = await axios.get(`http://localhost:3000/api/tasks/user/${userId}`);
+        console.log('API Response:', response.data); // Debug log
+        if (response.data) {
+          const formattedTasks = response.data.map(task => ({
+            projectId: task.projectId,
+            name: task.projectName,
+            task: task.title,
+            duedate: new Date(task.dueDate).toISOString().split('T')[0],
+            priority: task.priority.charAt(0).toUpperCase() + task.priority.slice(1),
+            status: task.status === 'to-do' ? 'Pending' : 
+                   task.status === 'in-progress' ? 'In Progress' : 
+                   task.status === 'done' ? 'Completed' : task.status,
+            assignedto: name
+          }));
+          console.log('Formatted Tasks:', formattedTasks); // Debug log
+          setRows(formattedTasks);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+
+    fetchTasks();
   }, []);
 
   const renderBadge = (value) => {
@@ -97,14 +87,7 @@ const Task = () => {
     );
   };
 
-  const filteredRows = name
-    ? rows.filter(
-        (task) =>
-          task.assignedto &&
-          name &&
-          task.assignedto.toLowerCase() === name.toLowerCase()
-      )
-    : rows;
+  const filteredRows = rows;
 
   const grouped = filteredRows.reduce((acc, task) => {
     if (!acc[task.projectId]) {
@@ -143,7 +126,7 @@ const Task = () => {
               return (
                 <TableRow
                   key={project.projectId}
-                  onClick={() => navigate(`/user/${name}/submit/${project.projectId}`)}
+                  onClick={() => navigate(`/user/${name}/${userId}/submit/${project.projectId}`)}
                   style={{ cursor: 'pointer' }}
                 >
                   <TableCell>{project.projectId}</TableCell>
@@ -162,8 +145,20 @@ const Task = () => {
                       </div>
                     ))}
                   </TableCell>
-                  <TableCell>{priorities.map(p => renderBadge(p))}</TableCell>
-                  <TableCell>{statuses.map(s => renderBadge(s))}</TableCell>
+                  <TableCell>
+                    {priorities.map((p, index) => (
+                      <div key={`${project.projectId}-priority-${index}`}>
+                        {renderBadge(p)}
+                      </div>
+                    ))}
+                  </TableCell>
+                  <TableCell>
+                    {statuses.map((s, index) => (
+                      <div key={`${project.projectId}-status-${index}`}>
+                        {renderBadge(s)}
+                      </div>
+                    ))}
+                  </TableCell>
                 </TableRow>
               );
             })}

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Box, AppBar, Toolbar, Button, Menu, MenuItem,
   Typography, IconButton, Avatar, Dialog
@@ -13,8 +14,28 @@ import MemberSignup from './MemberSignup';
 
 const Navbar = ({ isUserDashboard, loginOpen, setLoginOpen, signupOpen, setSignupOpen }) => {
   const navigate = useNavigate();
-const memberNames = ['Neenu', 'Archa', 'Adil', 'Alisha'];
+const [memberNames, setMemberNames] = useState([]);
 const adminNames = ['Alex Morgan', 'Admin2', 'Admin3'];
+
+useEffect(() => {
+  const fetchMembers = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/user');
+      const selectedUsers = ['neenu', 'Archa B Lal', 'Alisha','Adil Hisham'];
+      const members = response.data
+        .filter(user => selectedUsers.includes(user.username))
+        .map(user => ({
+          username: user.username,
+          userId: user.userId
+        }));
+      setMemberNames(members);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    }
+  };
+
+  fetchMembers();
+}, []);
 const [memberMenuAnchor, setMemberMenuAnchor] = useState(null);
 const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
 const [anchorEl, setAnchorEl] = useState(null);
@@ -23,9 +44,9 @@ const [anchorEl, setAnchorEl] = useState(null);
     setMemberMenuAnchor(event.currentTarget);
   };
 
-const handleMemberSelect = (name) => {
+const handleMemberSelect = (member) => {
     setMemberMenuAnchor(null);
-    navigate(`/user/${encodeURIComponent(name)}`);
+    navigate(`/user/${encodeURIComponent(member.username)}/${member.userId}`);
   };
 
   const handleAdminClick = (event) => {
@@ -211,9 +232,14 @@ const handleMemberSelect = (name) => {
                   open={Boolean(memberMenuAnchor)}
                   onClose={() => setMemberMenuAnchor(null)}
                 >
-                  {memberNames.map(name => (
-                    <MenuItem key={name} onClick={() => handleMemberSelect(name)}>
-                      {name}
+                  {memberNames.map(member => (
+                    <MenuItem 
+                      key={member.username} 
+                      onClick={() => handleMemberSelect(member)}
+                      sx={{ display: 'flex', justifyContent: 'space-between', width: '250px' }}
+                    >
+                      <span>{member.username}</span>
+                      <span style={{ color: '#666', fontSize: '0.9em' }}>ID: {member.userId}</span>
                     </MenuItem>
                   ))}
                 </Menu>

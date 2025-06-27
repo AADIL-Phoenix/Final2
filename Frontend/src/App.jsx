@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Assign from './components/Assign';
 import TeamManagement from './components/TeamManagement';
+import Edit from './components/Edit';
 import DashboardLayout from './components/user/DashboardLayout';
 import Task from './components/user/Task';
 import SubmitPage from './components/user/Submit';
@@ -37,15 +38,16 @@ const App = () => {
 
         {/* Admin Routes */}
         <Route path="/assign" element={<Assign />} />
+        <Route path="/edit" element={<Edit />} />
         <Route path="/team-management" element={<TeamManagement />} />
 
-          {/* User-based Dashboard Routes */}
-        <Route path="/user/:name/*" element={<DashboardLayout />}>
+        {/* User-based Dashboard Routes */}
+        <Route path="/user/:name/:userId/*" element={<DashboardLayout />}>
           <Route index element={<Task />} />
           <Route path="dashboard" element={<TeamDashboard />} />
           <Route path="tasks" element={<Task />} />
           <Route path="submit/:projectId" element={<SubmitPage />} />
-
+          <Route path="tasks/submit/:projectId" element={<SubmitPage />} />
         </Route>
 
         {/* Profile Page */}

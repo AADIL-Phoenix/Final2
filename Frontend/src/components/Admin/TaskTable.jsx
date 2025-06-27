@@ -88,7 +88,7 @@ const TaskTable = () => {
   const handleEdit = (id) => {
     const taskToEdit = rows.find(row => row.id === id);
     if (taskToEdit) {
-      navigate('/assign', { state: { task: taskToEdit } });
+      navigate('/edit', { state: { taskId: id } });
     }
   };
 

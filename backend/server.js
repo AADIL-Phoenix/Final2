@@ -55,13 +55,202 @@ app.delete('/task/:id', async (req, res) => {
   }
 });
 
-// New GET API for tasks
+// Update task
+app.put('/task/:taskId', async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { title, description, status, priority, dueDate, projectId, projectName, assignedToUserId } = req.body;
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      {
+        title,
+        description,
+        status,
+        priority,
+        dueDate,
+        projectId,
+        projectName,
+        assignedToUserId
+      },
+      { new: true }
+    );
+
+    if (!updatedTask) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.json(updatedTask);
+  } catch (err) {
+    console.error('Error updating task:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Get single task by ID
+app.get('/task/:taskId', async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const task = await Task.findById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    
+    res.json(task);
+  } catch (err) {
+    console.error('Error fetching task:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Get all tasks
 app.get('/task', async (req, res) => {
   try {
     const tasks = await Task.find(); // returns ALL tasks
     res.json(tasks);
   } catch (err) {
     console.error('Error fetching tasks:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Update tasks for a user's project
+app.patch('/api/tasks/user/:userId/project/:projectId', async (req, res) => {
+  try {
+    const { userId, projectId } = req.params;
+    const { status, github } = req.body;
+    
+    const tasks = await Task.updateMany(
+      { assignedToUserId: userId, projectId: projectId },
+      { $set: { status, github } }
+    );
+
+    if (tasks.modifiedCount === 0) {
+      return res.status(404).json({ message: 'No tasks found to update' });
+    }
+
+    res.json({ message: 'Tasks updated successfully' });
+  } catch (err) {
+    console.error('Error updating tasks:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Get task metrics for a user
+app.get('/api/tasks/metrics/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const tasks = await Task.find({ assignedToUserId: userId });
+
+    if (!tasks || tasks.length === 0) {
+      return res.status(404).json({ message: 'No tasks found for this user' });
+    }
+
+    const total = tasks.length;
+    const metrics = {
+      performance: {
+        title: 'Team Performance',
+        metrics: [
+          { 
+            name: 'Task Completion Rate', 
+            value: `${Math.round((tasks.filter(t => t.status === 'done').length / total) * 100)}%`,
+            change: '+5%'
+          },
+          { 
+            name: 'Tasks This Week', 
+            value: tasks.filter(t => {
+              const taskDate = new Date(t.createdAt);
+              const weekAgo = new Date();
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              return taskDate >= weekAgo;
+            }).length.toString(),
+            change: '+3'
+          },
+          { 
+            name: 'On-time Delivery', 
+            value: `${Math.round((tasks.filter(t => new Date(t.dueDate) >= new Date()).length / total) * 100)}%`,
+            change: '+2%'
+          },
+          { 
+            name: 'In Progress', 
+            value: tasks.filter(t => t.status === 'in-progress').length.toString(),
+            change: '0'
+          }
+        ]
+      },
+      tasks: {
+        title: 'Task Distribution',
+        metrics: [
+          { 
+            name: 'Completed Tasks', 
+            value: tasks.filter(t => t.status === 'done').length.toString(),
+            change: '+0'
+          },
+          { 
+            name: 'In Progress', 
+            value: tasks.filter(t => t.status === 'in-progress').length.toString(),
+            change: '+0'
+          },
+          { 
+            name: 'Pending Tasks', 
+            value: tasks.filter(t => t.status === 'to-do').length.toString(),
+            change: '+0'
+          },
+          { 
+            name: 'High Priority', 
+            value: tasks.filter(t => t.priority === 'high').length.toString(),
+            change: '+0'
+          }
+        ]
+      },
+      productivity: {
+        title: 'Productivity Trends',
+        metrics: [
+          { 
+            name: 'Weekly Output', 
+            value: `${Math.round((tasks.filter(t => t.status === 'done').length / total) * 100)}%`,
+            change: '↑'
+          },
+          { 
+            name: 'Active Tasks', 
+            value: tasks.filter(t => t.status !== 'done').length.toString(),
+            change: '→'
+          },
+          { 
+            name: 'Completion Rate', 
+            value: `${Math.round((tasks.filter(t => t.status === 'done').length / total) * 100)}%`,
+            change: '↑'
+          },
+          { 
+            name: 'Task Balance', 
+            value: total > 0 ? 'Good' : 'N/A',
+            change: '→'
+          }
+        ]
+      }
+    };
+
+    res.json(metrics);
+  } catch (err) {
+    console.error('Error fetching task metrics:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Get tasks by user ID
+app.get('/api/tasks/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Find all tasks assigned to that userId directly
+    const tasks = await Task.find({ assignedToUserId: userId });
+    if (!tasks || tasks.length === 0) {
+      return res.status(404).json({ message: 'No tasks found for this user' });
+    }
+    res.json(tasks);
+  } catch (err) {
+    console.error('Error fetching tasks for user:', err);
     res.status(500).send('Internal Server Error');
   }
 });

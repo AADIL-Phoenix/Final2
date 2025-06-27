@@ -1,11 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Grid, Button, Typography, Paper } from '@mui/material';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
 const TeamAnalyticsSection = () => {
+  const { userId } = useParams();
   const [activeTab, setActiveTab] = useState('performance');
   const [timeRange, setTimeRange] = useState('month');
+  const [analyticsData, setAnalyticsData] = useState({
+    performance: { title: 'Team Performance', metrics: [] },
+    tasks: { title: 'Task Distribution', metrics: [] },
+    productivity: { title: 'Productivity Trends', metrics: [] }
+  });
 
-  const analyticsData = {
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/api/tasks/metrics/${userId}`);
+        setAnalyticsData(response.data);
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      }
+    };
+
+    if (userId) {
+      fetchMetrics();
+    }
+  }, [userId]);
+
+  const mockData = {
     performance: {
       title: 'Team Performance',
       metrics: [
@@ -35,7 +58,7 @@ const TeamAnalyticsSection = () => {
     }
   };
 
-  const currentData = analyticsData[activeTab];
+  const currentData = analyticsData[activeTab] || mockData[activeTab];
   
   // Custom SVG Icons
   const BarChartIcon = () => (

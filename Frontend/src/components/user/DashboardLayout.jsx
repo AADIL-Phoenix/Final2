@@ -1,12 +1,10 @@
 import React from 'react';
-import { NavLink, Outlet, useNavigate ,useParams} from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useParams } from 'react-router-dom';
 import './DashboardLayout.css';
 import Navbar from '../Navbar';
 
-
 const DashboardLayout = () => {
-  const { name } = useParams();
-
+  const { name, userId } = useParams();
   
   const navigate = useNavigate();
 
@@ -16,7 +14,7 @@ const DashboardLayout = () => {
       navigate('/');
     }
   };
-  ;
+
   return (
     <>
       <Navbar isUserDashboard />
@@ -25,10 +23,10 @@ const DashboardLayout = () => {
           <h2>Hey {name}</h2>
           <ul>
             <li>
-              <NavLink to={`/user/${name}/dashboard`} className={({ isActive }) => isActive ? 'active' : ''}>
+              <NavLink to={`/user/${name}/${userId}/dashboard`} className={({ isActive }) => isActive ? 'active' : ''}>
                 🏠 Dashboard
               </NavLink>
-              <NavLink to={`/user/${name}/tasks`} className={({ isActive }) => isActive ? 'active' : ''}>
+              <NavLink to={`/user/${name}/${userId}/tasks`} className={({ isActive }) => isActive ? 'active' : ''}>
                 📋 My Tasks
               </NavLink>
             </li>
@@ -46,4 +44,5 @@ const DashboardLayout = () => {
     </>
   );
 };
+
 export default DashboardLayout;

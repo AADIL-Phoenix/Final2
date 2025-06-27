@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import './TeamDashboard.css';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const TeamDashboard = () => {
-  const { name } = useParams(); // Get member name from route (e.g. /user/Neenu)
+  const { name, userId } = useParams();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -42,13 +43,29 @@ const TeamDashboard = () => {
   // Mock task data
   const [tasks, setTasks] = useState([]);
 
- useEffect(() => {
-  const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  const filteredTasks = name
-    ? storedTasks.filter(task => task.assignedto?.toLowerCase() === name.toLowerCase())
-    : storedTasks;
-  setTasks(filteredTasks);
-}, [name]);
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/api/tasks/user/${userId}`);
+        if (response.data) {
+          const formattedTasks = response.data.map(task => ({
+            ...task,
+            status: task.status === 'to-do' ? 'Pending' : 
+                    task.status === 'in-progress' ? 'In Progress' : 
+                    task.status === 'done' ? 'Completed' : task.status,
+            priority: task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
+          }));
+          setTasks(formattedTasks);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+
+    if (userId) {
+      fetchTasks();
+    }
+  }, [userId]);
 
 
 
