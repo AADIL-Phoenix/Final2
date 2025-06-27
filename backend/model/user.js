@@ -15,8 +15,11 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    
     default: 'member'
+  },
+  password: {
+    type: String,
+    required: true,
   },
   userId: {
     type: String,
@@ -24,7 +27,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true
   }
-}, { timestamps: true, collection: 'users' }); // `timestamps: true` handles createdAt and updatedAt
+}, { timestamps: true, collection: 'users' });
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

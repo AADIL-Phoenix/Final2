@@ -2,8 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const Project = require('./model/project');
-const Task = require('./model/task'); // Import the new Task model
-const User = require('./model/user'); // Import the new User model
+const Task = require('./model/task');
+const User = require('./model/user');
 const bcrypt = require('bcrypt');
 
 const app = new express();
@@ -12,12 +12,14 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+// Add bcrypt hashing for passwords
+const saltRounds = 10;
+
 app.post('/newtask', async (req, res) => {
   try {
-    console.log('Request body:', req.body); // Debugging log
-    const { title, description, status, priority, dueDate, projectId, projectName,assignedToUserId, createdByUserId } = req.body;
+    console.log('Request body:', req.body);
+    const { title, description, status, priority, dueDate, projectId, projectName, assignedToUserId, createdByUserId } = req.body;
 
-    // Validate required fields
     if (!title || !projectId || !assignedToUserId || !createdByUserId) {
       return res.status(400).json({ message: 'Missing required fields: title, projectId, assignedToUserId, or createdByUserId' });
     }
@@ -29,9 +31,9 @@ app.post('/newtask', async (req, res) => {
       priority,
       dueDate,
       projectId: projectId.toString(),
-      projectName: projectName.toString(), // Save as string
-      assignedToUserId: assignedToUserId.toString(), // Save as string
-      createdByUserId: createdByUserId.toString() // Save as string
+      projectName: projectName.toString(),
+      assignedToUserId: assignedToUserId.toString(),
+      createdByUserId: createdByUserId.toString()
     });
     await newTask.save();
     res.status(201).json(newTask);
@@ -55,7 +57,6 @@ app.delete('/task/:id', async (req, res) => {
   }
 });
 
-// Update task
 app.put('/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -87,7 +88,6 @@ app.put('/task/:taskId', async (req, res) => {
   }
 });
 
-// Get single task by ID
 app.get('/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -104,10 +104,9 @@ app.get('/task/:taskId', async (req, res) => {
   }
 });
 
-// Get all tasks
 app.get('/task', async (req, res) => {
   try {
-    const tasks = await Task.find(); // returns ALL tasks
+    const tasks = await Task.find();
     res.json(tasks);
   } catch (err) {
     console.error('Error fetching tasks:', err);
@@ -115,7 +114,6 @@ app.get('/task', async (req, res) => {
   }
 });
 
-// Update tasks for a user's project
 app.patch('/api/tasks/user/:userId/project/:projectId', async (req, res) => {
   try {
     const { userId, projectId } = req.params;
@@ -137,7 +135,6 @@ app.patch('/api/tasks/user/:userId/project/:projectId', async (req, res) => {
   }
 });
 
-// Get task metrics for a user
 app.get('/api/tasks/metrics/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -238,12 +235,9 @@ app.get('/api/tasks/metrics/:userId', async (req, res) => {
   }
 });
 
-// Get tasks by user ID
 app.get('/api/tasks/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    // Find all tasks assigned to that userId directly
     const tasks = await Task.find({ assignedToUserId: userId });
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ message: 'No tasks found for this user' });
@@ -255,20 +249,24 @@ app.get('/api/tasks/user/:userId', async (req, res) => {
   }
 });
 
+// Updated newuser endpoint with password hashing
 app.post('/newuser', async (req, res) => {
   try {
-    const { username, email, role, userId } = req.body;
+    const { username, email, role, userId, password } = req.body;
 
-    // Validate required fields
-    if (!username || !email || !role || !userId) {
-      return res.status(400).json({ message: 'Missing required fields: username, email, role, or userId' });
+    if (!username || !email || !role || !userId || !password) {
+      return res.status(400).json({ message: 'Missing required fields: username, email, role, userId, or password' });
     }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const newUser = new User({
       username,
       email,
       role,
-      userId
+      userId,
+      password: hashedPassword
     });
 
     await newUser.save();
@@ -294,11 +292,10 @@ app.delete('/user/:userId', async (req, res) => {
   }
 });
 
-// New GET API for users
 app.get('/user', async(req, res) => {
   try {
-    const users = await User.find(); // Fetch all users
-    res.json(users); // Send users as JSON
+    const users = await User.find();
+    res.json(users);
   } catch (err) {
     console.error('Error fetching users:', err);
     res.status(500).send('Internal Server Error');

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, Card, CardContent, Typography, Avatar, 
   Button, TextField, Divider, List, ListItem, 
@@ -12,56 +12,37 @@ import './ProfilePage.css';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   
-  // State for admin data
-  const [adminData, setAdminData] = useState({
-    name: 'Alex Morgan',
-    role: 'Admin',
-    email: 'alex.morgan@taskflowpro.com',
-    avatar: 'A'
+  // Get user from location state or localStorage
+  const [userData, setUserData] = useState(() => {
+    if (location.state?.user) {
+      return location.state.user;
+    }
+    
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : {
+      name: 'Alex Morgan',
+      role: 'Admin',
+      email: 'alex.morgan@taskflowpro.com',
+      avatar: 'A',
+      userId: 'admin1'
+    };
   });
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: ''
+    name: userData.name,
+    email: userData.email
   });
 
-  React.useEffect(() => {
-    // Fetch user data from the backend
-    fetch('http://localhost:3000/user')
-      .then(response => response.json())
-      .then(data => {
-        console.log('Fetched user data:', data); // Debugging the API response
-        if (!data || data.length === 0) {
-          console.error('No user data found or invalid response:', data);
-        }
-        if (data.length === 0) {
-          console.error('No user data found in the response.');
-        } else {
-          console.log('First user data:', data[0]); // Inspecting the first user
-        }
-        if (data.length > 0) {
-          const user = data[0]; // Assuming the first user is the admin
-          const updatedAdminData = {
-            name: 'Alex Morgan',
-            role: 'Admin',
-            email: 'alex.morgan@taskflowpro.com',
-            avatar: 'A'
-          };
-          console.log('Updated adminData state:', updatedAdminData); // Debugging state update
-          if (!updatedAdminData.email) {
-            console.error('Email is missing in the updated adminData:', updatedAdminData);
-          }
-          setAdminData(updatedAdminData);
-          setFormData({
-            name: user.username,
-            email: user.email
-          });
-        }
-      })
-      .catch(error => console.error('Error fetching user data:', error));
-  }, []);
+  useEffect(() => {
+    // Update form data when user data changes
+    setFormData({
+      name: userData.name,
+      email: userData.email
+    });
+  }, [userData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -70,7 +51,16 @@ const ProfilePage = () => {
 
   const handleSave = () => {
     setIsEditing(false);
-    // In a real app, you would send the updated data to your backend here
+    // Update user data
+    const updatedUser = {
+      ...userData,
+      name: formData.name,
+      email: formData.email
+    };
+    
+    setUserData(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    
     console.log('Profile updated:', formData);
   };
 
@@ -79,7 +69,7 @@ const ProfilePage = () => {
       {/* Header Section */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: '#333' }}>
-          Admin Profile
+          {userData.role} Profile
         </Typography>
         <Button 
           variant="contained" 
@@ -120,7 +110,7 @@ const ProfilePage = () => {
               mb: 2,
               mx: 'auto'
             }}>
-              {adminData.avatar}
+              {userData.avatar}
             </Avatar>
           </Badge>
           
@@ -134,7 +124,7 @@ const ProfilePage = () => {
                 variant="standard"
                 sx={{ mb: 2 }}
               />
-            ) : adminData.name}
+            ) : userData.name}
           </Typography>
           <List>
             <ListItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -153,7 +143,7 @@ const ProfilePage = () => {
                     onChange={handleInputChange}
                     variant="standard"
                   />
-                ) : adminData.email}
+                ) : userData.email}
                 sx={{ 
                   '& .MuiListItemText-primary': { textAlign: 'center' },
                   '& .MuiListItemText-secondary': { textAlign: 'center' }
@@ -171,7 +161,7 @@ const ProfilePage = () => {
             borderRadius: 2,
             display: 'inline-block'
           }}>
-            {adminData.role}
+            {userData.role}
           </Typography>
           
           <Box sx={{ 
@@ -181,34 +171,34 @@ const ProfilePage = () => {
             mt: 2, 
             mb: 3 
           }}>
-              <Button 
-                variant="outlined" 
-                fullWidth
-                onClick={() => navigate('/assign')}
-                sx={{
-                  fontWeight: 600,
+            <Button 
+              variant="outlined" 
+              fullWidth
+              onClick={() => navigate('/assign')}
+              sx={{
+                fontWeight: 600,
+                borderWidth: '2px',
+                '&:hover': {
                   borderWidth: '2px',
-                  '&:hover': {
-                    borderWidth: '2px',
-                  }
-                }}
-              >
-                Assign Task
-              </Button>
-              <Button 
-                variant="contained" 
-                fullWidth
-                onClick={() => navigate('/team-management')}
-                sx={{
-                  fontWeight: 600,
-                  background: 'linear-gradient(45deg, #6b5ce7 0%, #3a8dff 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #5b4cd7 0%, #2a7def 100%)',
-                  }
-                }}
-              >
-                Team Management
-              </Button>
+                }
+              }}
+            >
+              Assign Task
+            </Button>
+            <Button 
+              variant="contained" 
+              fullWidth
+              onClick={() => navigate('/team-management')}
+              sx={{
+                fontWeight: 600,
+                background: 'linear-gradient(45deg, #6b5ce7 0%, #3a8dff 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #5b4cd7 0%, #2a7def 100%)',
+                }
+              }}
+            >
+              Team Management
+            </Button>
           </Box>
           
           <Divider sx={{ my: 2 }} />

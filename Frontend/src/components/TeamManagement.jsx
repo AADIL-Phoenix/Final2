@@ -10,7 +10,7 @@ import {
 import {
   Add, CheckCircle,
   Person, Email, Close,
-  Work, BusinessCenter
+  Work, BusinessCenter, Lock
 } from '@mui/icons-material';
 
 const TeamManagement = () => {
@@ -20,7 +20,8 @@ const TeamManagement = () => {
     name: '',
     role: '',
     email: '',
-    userId: ''
+    userId: '',
+    password: ''
   });
 
   const [teamMembers, setTeamMembers] = useState([]);
@@ -46,7 +47,8 @@ const TeamManagement = () => {
       name: '',
       role: '',
       email: '',
-      userId: ''
+      userId: '',
+      password: ''
     });
   };
 
@@ -57,19 +59,12 @@ const TeamManagement = () => {
 
   const handleAddMember = () => {
     if (newMember.name && newMember.role) {
-      const initials = newMember.name.split(' ').map(n => n[0]).join('');
-
-      const member = {
-        id: teamMembers.length + 1,
-        initials,
-        ...newMember
-      };
-
       axios.post('http://localhost:3000/newuser', {
         username: newMember.name,
         email: newMember.email,
         role: newMember.role,
-        userId: newMember.userId
+        userId: newMember.userId,
+        password: newMember.password
       })
         .then((response) => {
           setTeamMembers([...teamMembers, response.data]);
@@ -142,7 +137,7 @@ const TeamManagement = () => {
 
           <div className="row g-3">
             {teamMembers.map(member => (
-              <div key={member.id} className="col-md-6">
+              <div key={member.userId} className="col-md-6">
                 <div className="card border-0 shadow-sm-hover" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
                   <div className="card-body p-3">
                     <div className="d-flex align-items-start gap-3">
@@ -266,7 +261,6 @@ const TeamManagement = () => {
               }}
               placeholder="John Smith"
               sx={{ mt: 2 }}
-
             />
 
             <TextField
@@ -295,7 +289,7 @@ const TeamManagement = () => {
               }}
               placeholder="Frontend Developer"
             />
-
+           
             <TextField
               fullWidth
               label="Email"
@@ -348,6 +342,34 @@ const TeamManagement = () => {
                 }
               }}
               placeholder="12345"
+            />
+            
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={newMember.password}
+              onChange={handleInputChange}
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              InputLabelProps={{
+                shrink: true,
+                style: {
+                  fontWeight: 500,
+                  color: '#334155',
+                  backgroundColor: 'white',
+                  padding: '0 4px',
+                  marginLeft: '-4px'
+                }
+              }}
+              placeholder="Enter password"
             />
           </Box>
         </DialogContent>

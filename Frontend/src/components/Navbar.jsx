@@ -1,50 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AdminLogin from './AdminLogin';
+import MemberSignup from './MemberSignup';
 import {
   Box, AppBar, Toolbar, Button, Menu, MenuItem,
   Typography, IconButton, Avatar, Dialog
 } from '@mui/material';
-import AdminLogin from './AdminLogin';
-import MemberSignup from './MemberSignup';
-
-
-
-
 
 const Navbar = ({ isUserDashboard, loginOpen, setLoginOpen, signupOpen, setSignupOpen }) => {
   const navigate = useNavigate();
-const [memberNames, setMemberNames] = useState([]);
-const adminNames = ['Alex Morgan', 'Admin2', 'Admin3'];
+  const [memberNames, setMemberNames] = useState([]);
+  
+  // Define admin users with full details
+  const adminUsers = [
+    { 
+      name: 'Alex Morgan', 
+      email: 'alex.morgan@taskflowpro.com',
+      role: 'Admin',
+      avatar: 'AM',
+      userId: 'admin1'
+    },
+    { 
+      name: 'Admin2', 
+      email: 'admin2@taskflowpro.com',
+      role: 'Admin',
+      avatar: 'A2',
+      userId: 'admin2'
+    },
+    { 
+      name: 'Admin3', 
+      email: 'admin3@taskflowpro.com',
+      role: 'Admin',
+      avatar: 'A3',
+      userId: 'admin3'
+    },
+  ];
 
-useEffect(() => {
-  const fetchMembers = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/user');
-      const selectedUsers = ['neenu', 'Archa B Lal', 'Alisha','Adil Hisham'];
-      const members = response.data
-        .filter(user => selectedUsers.includes(user.username))
-        .map(user => ({
-          username: user.username,
-          userId: user.userId
-        }));
-      setMemberNames(members);
-    } catch (error) {
-      console.error('Error fetching members:', error);
-    }
-  };
+  const [memberMenuAnchor, setMemberMenuAnchor] = useState(null);
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
-  fetchMembers();
-}, []);
-const [memberMenuAnchor, setMemberMenuAnchor] = useState(null);
-const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
-const [anchorEl, setAnchorEl] = useState(null);
-  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/user');
+        const selectedUsers = ['neenu', 'Archa B Lal', 'Alisha','Adil Hisham'];
+        const members = response.data
+          .filter(user => selectedUsers.includes(user.username))
+          .map(user => ({
+            username: user.username,
+            userId: user.userId
+          }));
+        setMemberNames(members);
+      } catch (error) {
+        console.error('Error fetching members:', error);
+      }
+    };
+
+    fetchMembers();
+  }, []);
+
   const handleMemberClick = (event) => {
     setMemberMenuAnchor(event.currentTarget);
   };
 
-const handleMemberSelect = (member) => {
+  const handleMemberSelect = (member) => {
     setMemberMenuAnchor(null);
     navigate(`/user/${encodeURIComponent(member.username)}/${member.userId}`);
   };
@@ -53,30 +78,32 @@ const handleMemberSelect = (member) => {
     setAdminMenuAnchor(event.currentTarget);
   };
 
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
-
-  const handleAdminSelect = (name) => {
+  const handleAdminSelect = (admin) => {
     setAdminMenuAnchor(null);
-    setSelectedAdmin(name);
     setLoginOpen(true);
+    // Store selected admin in localStorage
+    localStorage.setItem('selectedAdmin', JSON.stringify(admin));
   };
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-
   const handleClose = () => {
     setAnchorEl(null);
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    if (user) {
+      navigate('/profile', { state: { user } });
+    }
     handleClose();
   };
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('selectedAdmin');
     handleClose();
   };
 
@@ -248,16 +275,15 @@ const handleMemberSelect = (member) => {
                   open={Boolean(adminMenuAnchor)}
                   onClose={() => setAdminMenuAnchor(null)}
                 >
-                  {adminNames.map(name => (
-                    <MenuItem key={name} onClick={() => handleAdminSelect(name)}>
-                      {name}
+                  {adminUsers.map(admin => (
+                    <MenuItem key={admin.name} onClick={() => handleAdminSelect(admin)}>
+                      {admin.name}
                     </MenuItem>
                   ))}
                 </Menu>
               </Box>
             )
           )}
-
 
           {/* Mobile Menu Button */}
           <IconButton
@@ -281,7 +307,6 @@ const handleMemberSelect = (member) => {
             setSignupOpen(true);
           }}
           onClose={() => setLoginOpen(false)}
-          selectedAdmin={selectedAdmin}
         />
       </Dialog>
 
