@@ -32,6 +32,7 @@ const App = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
+
   return (
     <Router>
       {/* Navbar always shown */}
@@ -58,10 +59,10 @@ const App = () => {
         {/* Admin Routes */}
         {user?.role === 'admin' && (
           <>
-        <Route path="/assign" element={<Assign />} />
-        <Route path="/edit" element={<Edit />} />
-        <Route path="/team-management" element={<TeamManagement />} />
-        </>
+            <Route path="/assign" element={<Assign />} />
+            <Route path="/edit" element={<Edit />} />
+            <Route path="/team-management" element={<TeamManagement />} />
+          </>
         )}
 
         {/* User-based Dashboard Routes */}

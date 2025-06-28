@@ -40,32 +40,39 @@ const TeamDashboard = () => {
     return `${day} ${dayNum}${getOrdinal(dayNum)} ${month} ${year}`;
   };
 
-  // Mock task data
-  const [tasks, setTasks] = useState([]);
+const [tasks, setTasks] = useState([]);
+const [metrics, setMetrics] = useState(null);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3000/api/tasks/user/${userId}`);
-        if (response.data) {
-          const formattedTasks = response.data.map(task => ({
-            ...task,
-            status: task.status === 'to-do' ? 'Pending' : 
-                    task.status === 'in-progress' ? 'In Progress' : 
-                    task.status === 'done' ? 'Completed' : task.status,
-            priority: task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
-          }));
-          setTasks(formattedTasks);
-        }
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
+useEffect(() => {
+  const fetchData = async () => {
+    if (!userId) return;
+
+    try {
+      // Fetch tasks
+      const tasksResponse = await axios.get(`http://localhost:3000/api/tasks/user/${userId}`);
+      if (tasksResponse.data) {
+        const formattedTasks = tasksResponse.data.map(task => ({
+          ...task,
+          status: task.status === 'to-do' ? 'Pending' : 
+                  task.status === 'in-progress' ? 'In Progress' : 
+                  task.status === 'done' ? 'Completed' : task.status,
+          priority: task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
+        }));
+        setTasks(formattedTasks);
       }
-    };
 
-    if (userId) {
-      fetchTasks();
+      // Fetch metrics
+      const metricsResponse = await axios.get(`http://localhost:3000/api/tasks/metrics/${userId}`);
+      if (metricsResponse.data) {
+        setMetrics(metricsResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
     }
-  }, [userId]);
+  };
+
+  fetchData();
+}, [userId]);
 
 
 
@@ -107,6 +114,37 @@ const TeamDashboard = () => {
           <span className="task-count in-progress">{inProgress} In Progress</span>
         </div>
 
+        {metrics && (
+          <div className="metrics-grid">
+            <div className="metrics-section">
+              <h3>{metrics.performance.title}</h3>
+              <div className="metrics-items">
+                {metrics.performance.metrics.map((metric, index) => (
+                  <div key={index} className="metric-item">
+                    <span className="metric-name">{metric.name}</span>
+                    <span className="metric-value">{metric.value}</span>
+                    <span className={`metric-change ${metric.change.includes('+') ? 'positive' : ''}`}>
+                      {metric.change}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="metrics-section">
+              <h3>{metrics.productivity.title}</h3>
+              <div className="metrics-items">
+                {metrics.productivity.metrics.map((metric, index) => (
+                  <div key={index} className="metric-item">
+                    <span className="metric-name">{metric.name}</span>
+                    <span className="metric-value">{metric.value}</span>
+                    <span className="metric-trend">{metric.change}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="charts-row">

@@ -49,3 +49,82 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.metrics-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.metrics-section h3 {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.metrics-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  transition: transform 0.2s;
+}
+
+.metric-item:hover {
+  transform: translateY(-2px);
+}
+
+.metric-name {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.metric-change {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.metric-change.positive {
+  color: #28a745;
+}
+
+.metric-trend {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.metric-trend:contains('↑') {
+  color: #28a745;
+}
+
+.metric-trend:contains('↓') {
+  color: #dc3545;
+}
