@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -15,7 +16,6 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: 'member'
   },
   password: {
     type: String,
@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    trim: true
+    default: uuidv4,
   }
 }, { timestamps: true, collection: 'users' });
 

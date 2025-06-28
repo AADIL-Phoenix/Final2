@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Assign from './components/Assign';
@@ -11,35 +11,58 @@ import SubmitPage from './components/user/Submit';
 import TeamDashboard from './components/user/TeamDashboard';
 import LogOut from './components/user/LogOut';
 import ProfilePage from './components/ProfilePage';
-import './App.css'; // if you have one
+import './App.css'; 
+import LoginPage from './components/Login';
+import AdminRegisterPage from './components/AdminRegister';
+import CreateMemberPage from './components/CreateMember';
+// ✅ MUI Dialog for popup
 
 const App = () => {
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [signupOpen, setSignupOpen] = useState(false);
+  const [user, setUser] = useState(null); // admin or member
 
+  useEffect(() => {
+    const saved = localStorage.getItem('user');
+    if (saved) {
+      setUser(JSON.parse(saved));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
+  };
   return (
     <Router>
+      {/* Navbar always shown */}
+      <Navbar user={user} setUser={setUser} onLogout={handleLogout} />
+
       <Routes>
-        {/* Landing Page Routes */}
+        {/* Landing Page */}
+        <Route path="/" element={<Home setUser={setUser} />} />
+
+        {/* Authentication Pages */}
+        <Route path="/login" element={<LoginPage setUser={setUser} />} />
+        <Route path="/register-admin" element={<AdminRegisterPage />} />
         <Route
-          path="/"
+          path="/create-member"
           element={
-            <>
-              <Navbar
-                loginOpen={loginOpen}
-                setLoginOpen={setLoginOpen}
-                signupOpen={signupOpen}
-                setSignupOpen={setSignupOpen}
-              />
-              <Home setLoginOpen={setLoginOpen} />
-            </>
+            user?.role === 'admin' ? (
+              <CreateMemberPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
 
         {/* Admin Routes */}
+        {user?.role === 'admin' && (
+          <>
         <Route path="/assign" element={<Assign />} />
         <Route path="/edit" element={<Edit />} />
         <Route path="/team-management" element={<TeamManagement />} />
+        </>
+        )}
 
         {/* User-based Dashboard Routes */}
         <Route path="/user/:name/:userId/*" element={<DashboardLayout />}>

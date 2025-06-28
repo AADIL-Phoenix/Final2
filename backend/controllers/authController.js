@@ -1,10 +1,11 @@
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
-const User = require('../models/userModel');
+const User = require('../model/user');
 const jwt = require('jsonwebtoken');
 
 // ONLY Admins can be registered 
 const registerAdmin = asyncHandler(async (req, res) => {
+    debugger;
     const { username, email, password } = req.body;
     const existingAdmin = await User.findOne({ email });
     if (existingAdmin) {
@@ -47,7 +48,7 @@ const createMember = asyncHandler(async (req, res) => {
         username,
         email,
         password: hashedPassword,
-        role: 'member'
+        role,
     });
 
     res.status(201).json({
@@ -76,10 +77,10 @@ const loginUser = asyncHandler(async (req, res) => {
                     role: user.role
                 }
             },
-            process.env.ACCESS_TOKEN_SECRET,
+            process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
-        res.status(200).json({ _id: user._id, email: user.email, role: user.role, accessToken });
+        res.status(200).json({ _id: user._id, username: user.username, email: user.email, role: user.role, accessToken });
     } else {
         res.status(401);
         throw new Error("Invalid credentials");

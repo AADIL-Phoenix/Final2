@@ -5,6 +5,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Home.css';
 
 const Home = ({ setLoginOpen }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+const isAdmin = user?.role === 'admin';
   // Sample data for the demo
   const tasks = [
     { 
@@ -88,6 +90,7 @@ const Home = ({ setLoginOpen }) => {
               <h1 className="display-4 fw-bold mb-3">Professional Task Management</h1>
               <p className="lead mb-4">Streamline workflows, assign tasks efficiently, and track progress with our enterprise-grade solution</p>
               <div className="d-flex gap-3">
+                {!user && (
                 <Button 
                   variant="light" 
                   size="lg" 
@@ -96,6 +99,7 @@ const Home = ({ setLoginOpen }) => {
                 >
                   Get Started
                 </Button>
+                )}
               </div>
             </div>
             <div className="col-lg-6 mt-5 mt-lg-0">
